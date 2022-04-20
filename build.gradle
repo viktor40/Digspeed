@@ -1,61 +1,55 @@
 buildscript {
     repositories {
-        mavenLocal()
         mavenCentral()
-        maven {
-            name = "sonatype"
-            url = "https://oss.sonatype.org/content/repositories/snapshots/"
-        }
-        maven {
-            name = "forge"
-            url = "http://files.minecraftforge.net/maven"
-        }
-        maven {
-            name = 'sponge'
-            url = 'http://repo.spongepowered.org/maven'
-        }
+        maven { url = "https://maven.minecraftforge.net" }
+        maven { url = "https://repo.spongepowered.org/repository/maven-public" }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:' + project.forgeGradleVersion
-        classpath 'org.spongepowered:mixingradle:0.5-SNAPSHOT'
+        classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
+        classpath "org.spongepowered:mixingradle:0.6-SNAPSHOT"
     }
 }
 
-apply plugin: 'net.minecraftforge.gradle.liteloader'
-apply plugin: 'org.spongepowered.mixin'
+apply plugin: "net.minecraftforge.gradle.liteloader"
+apply plugin: "org.spongepowered.mixin"
 
-group = "com.mumfrey.examplemod" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "examplemod"
+version = "1.1.0"
+def mcVersion = "1.12.2"
+def modName = "UsefulMod".toString()
+def modId = modName.toLowerCase()
+group = "nessiesson.$modId"
 
 minecraft {
-    // these values are defined in the gradle.properties file, so that this file does not need to be altered
-    version = project.mcVersion
-    mappings = project.mcMappings
+    version = mcVersion
+    mappings = "stable_39"
     runDir = "run"
-}
+    makeObfSourceJar = false
 
-sourceSets {
-    main {
-        // Refmap declaration must match the refmap name specified in the json config
-        ext.refMap = "mixins.example.refmap.json"
-    }
+    replace "@VERSION@", project.version
+    replace "@NAME@", modName
 }
 
 mixin {
-    // liteloader does not do runtime deobfuscation, so in production we use "notch names", mixin needs to know this
     defaultObfuscationEnv notch
+    add sourceSets.main, "mixins.${modId}.refmap.json"
 }
 
-litemod {
-    json {
-        name = "test"
-        mcversion = project.targetVersion
-        description = "An example litemod project which draws a clock in-game" 
-        mixinConfigs += "mixins.example.json"
-    }
+litemod.json {
+    author = "nessie".toString()
+    name = modName
+    displayName = modName
+    mcversion = mcVersion
+    description = "A very UsefulMod."
+    mixinConfigs += "mixins.${modId}.json".toString()
+    mixinConfigs += "mixins.clientcommands.json".toString()
 }
 
 jar {
-    // The litemod task above generates the litemod.json dynamically, you can replace it with a resource if you want more control
+    classifier = ""
+    baseName = "$modName-$mcVersion"
     from litemod.outputs
+}
+
+runClient {
+    jvmArgs "-Dmixin.debug=true"
 }
